@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SQL Formatter Online — Format &amp; Beautify SQL Free</title>
+  <meta name="description" content="Format and beautify SQL queries online for free. Supports SELECT, INSERT, UPDATE, DELETE, CREATE TABLE. No data sent to server.">
+  <link rel="canonical" href="https://devtoolbox.dev/sql-formatter/">
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="../index.html">Dev<span>Toolbox</span></a>
+  <ul class="nav-links">
+    <li><a href="../json-to-csv/">JSON→CSV</a></li>
+    <li><a href="../json-formatter/">JSON</a></li>
+    <li><a href="../jwt-decoder/">JWT</a></li>
+    <li><a href="../epoch-converter/">Epoch</a></li>
+    <li><a href="../base64/">Base64</a></li>
+    <li><a href="../regex-tester/">Regex</a></li>
+    <li><a href="../hash-generator/">Hash</a></li>
+    <li><a href="../uuid-generator/">UUID</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>SQL Formatter</h1>
+    <p>Format, indent and beautify SQL queries. Supports most SQL dialects — SELECT, INSERT, UPDATE, DELETE, CREATE, and more.</p>
+  </div>
+
+  <div class="tool-card">
+    <h2>Input SQL</h2>
+    <textarea id="input" placeholder="SELECT u.id, u.name, o.total FROM users u JOIN orders o ON u.id=o.user_id WHERE u.active=1 ORDER BY o.total DESC LIMIT 10" spellcheck="false" rows="8"></textarea>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px">
+      <label style="font-size:13px">Dialect:
+        <select id="dialect" style="width:120px;margin-left:6px">
+          <option>Standard SQL</option>
+          <option>PostgreSQL</option>
+          <option>MySQL</option>
+          <option>BigQuery</option>
+          <option>T-SQL (MSSQL)</option>
+        </select>
+      </label>
+      <label style="font-size:13px">Keywords:
+        <select id="kwCase" style="width:100px;margin-left:6px">
+          <option value="upper">UPPERCASE</option>
+          <option value="lower">lowercase</option>
+          <option value="preserve">Preserve</option>
+        </select>
+      </label>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="formatSQL()">Format SQL</button>
+      <button class="btn btn-secondary" onclick="minifySQL()">Minify</button>
+      <button class="btn btn-secondary" onclick="loadExample()">Example</button>
+      <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <div class="output-wrapper">
+    <div class="output-label">Formatted SQL</div>
+    <button class="copy-btn" id="copyBtn">Copy</button>
+    <pre class="output" id="output">Formatted SQL will appear here...</pre>
+  </div>
+</div>
+
+<footer>
+  <p><a href="../index.html">DevToolbox</a> · SQL Formatter · Free &amp; Private</p>
+</footer>
+
+<script src="../js/utils.js"></script>
+<script>
+// Pure JS SQL formatter — no external dependency needed for basic formatting
+const KEYWORDS = ['SELECT','FROM','WHERE','AND','OR','NOT','IN','EXISTS','BETWEEN','LIKE','IS','NULL',
+  'JOIN','LEFT','RIGHT','FULL','INNER','OUTER','CROSS','ON','USING','NATURAL',
+  'GROUP BY','ORDER BY','HAVING','LIMIT','OFFSET','UNION','EXCEPT','INTERSECT','ALL',
+  'INSERT INTO','VALUES','UPDATE','SET','DELETE FROM','CREATE TABLE','CREATE INDEX',
+  'DROP TABLE','ALTER TABLE','ADD COLUMN','DROP COLUMN','RENAME TO',
+  'DISTINCT','AS','CASE','WHEN','THEN','ELSE','END','OVER','PARTITION BY',
+  'WITH','RECURSIVE','EXPLAIN','ANALYZE','VACUUM','RETURNING'];
+
+function formatSQL() {
+  let sql = document.getElementById('input').value.trim();
+  if (!sql) { showError('output', 'Input is empty.'); return; }
+
+  const kwCase = document.getElementById('kwCase').value;
+
+  // Normalize whitespace
+  sql = sql.replace(/\s+/g, ' ');
+
+  // Add newlines before main clauses
+  const clauses = ['SELECT','FROM','WHERE','LEFT JOIN','RIGHT JOIN','FULL JOIN','INNER JOIN',
+    'JOIN','ON','GROUP BY','ORDER BY','HAVING','LIMIT','OFFSET','UNION ALL',
+    'UNION','EXCEPT','INTERSECT','INSERT INTO','VALUES','UPDATE','SET','DELETE FROM',
+    'CREATE TABLE','ALTER TABLE','DROP TABLE','WITH','RETURNING'];
+
+  let result = sql;
+
+  // Replace clause keywords with newlined versions (case-insensitive)
+  clauses.forEach(kw => {
+    const re = new RegExp('\\b(' + kw.replace(/ /g, '\\s+') + ')\\b', 'gi');
+    result = result.replace(re, (m, p1) => '\n' + applyCase(p1, kwCase));
+  });
+
+  // Indent AND/OR inside WHERE
+  result = result.replace(/\b(AND|OR)\b/gi, m => '\n  ' + applyCase(m, kwCase));
+
+  // Handle SELECT columns — split by comma at top level
+  result = formatSelectCols(result);
+
+  // Apply keyword case to remaining keywords
+  KEYWORDS.forEach(kw => {
+    const re = new RegExp('\\b' + kw + '\\b', 'gi');
+    result = result.replace(re, m => applyCase(m, kwCase));
+  });
+
+  // Clean up extra blank lines
+  result = result.replace(/\n{3,}/g, '\n\n').trim();
+
+  showOutput('output', result);
+}
+
+function formatSelectCols(sql) {
+  return sql.replace(/(SELECT\s+)([\s\S]*?)(FROM)/i, (_, sel, cols, from) => {
+    const parts = splitTopLevel(cols.trim());
+    if (parts.length > 1) {
+      return sel + '\n  ' + parts.map(p => p.trim()).join(',\n  ') + '\n' + from;
+    }
+    return _ ;
+  });
+}
+
+function splitTopLevel(str) {
+  const parts = [];
+  let depth = 0, cur = '';
+  for (const ch of str) {
+    if (ch === '(' || ch === '[') depth++;
+    else if (ch === ')' || ch === ']') depth--;
+    if (ch === ',' && depth === 0) { parts.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  if (cur) parts.push(cur);
+  return parts;
+}
+
+function applyCase(str, mode) {
+  if (mode === 'upper') return str.toUpperCase();
+  if (mode === 'lower') return str.toLowerCase();
+  return str;
+}
+
+function minifySQL() {
+  const sql = document.getElementById('input').value;
+  showOutput('output', sql.replace(/\s+/g, ' ').trim());
+}
+
+function loadExample() {
+  document.getElementById('input').value = `select u.id, u.name, u.email, count(o.id) as order_count, sum(o.total) as lifetime_value from users u left join orders o on u.id = o.user_id where u.active = 1 and u.created_at >= '2024-01-01' group by u.id, u.name, u.email having count(o.id) > 2 order by lifetime_value desc limit 50`;
+  formatSQL();
+}
+
+function clearAll() {
+  document.getElementById('input').value = '';
+  document.getElementById('output').textContent = 'Formatted SQL will appear here...';
+}
+
+setupCopyBtn('output', 'copyBtn');
+</script>
+</body>
+</html>

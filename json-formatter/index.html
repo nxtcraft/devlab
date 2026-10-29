@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JSON Formatter & Validator Online — Free, Instant</title>
+  <meta name="description" content="Format, validate, and minify JSON online for free. Instant syntax error detection with line numbers. No data sent to server.">
+  <link rel="canonical" href="https://devtoolbox.dev/json-formatter/">
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="../index.html">Dev<span>Toolbox</span></a>
+  <ul class="nav-links">
+    <li><a href="../json-to-csv/">JSON→CSV</a></li>
+    <li><a href="../sql-formatter/">SQL</a></li>
+    <li><a href="../jwt-decoder/">JWT</a></li>
+    <li><a href="../epoch-converter/">Epoch</a></li>
+    <li><a href="../base64/">Base64</a></li>
+    <li><a href="../regex-tester/">Regex</a></li>
+    <li><a href="../hash-generator/">Hash</a></li>
+    <li><a href="../uuid-generator/">UUID</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>JSON Formatter &amp; Validator</h1>
+    <p>Format, validate, minify, or sort keys in JSON — 100% browser-based, no server upload.</p>
+  </div>
+
+  <div class="tool-card">
+    <h2>Input JSON</h2>
+    <textarea id="input" placeholder='{"key":"value","array":[1,2,3]}' spellcheck="false"></textarea>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px">
+      <label style="font-size:13px">Indent:
+        <select id="indent" style="width:70px;margin-left:6px">
+          <option value="2">2</option>
+          <option value="4">4</option>
+          <option value="1">1</option>
+        </select>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+        <input type="checkbox" id="sortKeys" style="width:auto;accent-color:var(--accent)"> Sort keys
+      </label>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="format()">Format / Validate</button>
+      <button class="btn btn-secondary" onclick="minify()">Minify</button>
+      <button class="btn btn-secondary" onclick="loadExample()">Example</button>
+      <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+    </div>
+  </div>
+
+  <div id="statusRow" style="margin-top:12px;display:none">
+    <span id="statusBadge" class="badge"></span>
+    <span id="statusMsg" style="font-size:13px;color:var(--text-muted);margin-left:8px"></span>
+  </div>
+
+  <div class="output-wrapper" style="margin-top:16px">
+    <div class="output-label">Output</div>
+    <button class="copy-btn" id="copyBtn">Copy</button>
+    <pre class="output" id="output">Formatted JSON will appear here...</pre>
+  </div>
+</div>
+
+<footer>
+  <p><a href="../index.html">DevToolbox</a> · JSON Formatter &amp; Validator · Free &amp; Private</p>
+</footer>
+
+<script src="../js/utils.js"></script>
+<script>
+const EXAMPLE = {"user":{"id":42,"name":"Alice Smith","roles":["admin","editor"],"address":{"city":"New York","zip":"10001"},"active":true},"timestamp":1700000000};
+
+function sortKeysDeep(obj) {
+  if (Array.isArray(obj)) return obj.map(sortKeysDeep);
+  if (obj && typeof obj === 'object') {
+    return Object.fromEntries(Object.keys(obj).sort().map(k => [k, sortKeysDeep(obj[k])]));
+  }
+  return obj;
+}
+
+function format() {
+  const raw = document.getElementById('input').value.trim();
+  const statusRow = document.getElementById('statusRow');
+  const badge = document.getElementById('statusBadge');
+  const msg = document.getElementById('statusMsg');
+  statusRow.style.display = 'flex';
+  statusRow.style.alignItems = 'center';
+
+  if (!raw) { showError('output', 'Input is empty.'); return; }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+    badge.className = 'badge badge-success';
+    badge.textContent = '✓ Valid JSON';
+    msg.textContent = `${raw.length.toLocaleString()} chars · ${countNodes(parsed)} nodes`;
+  } catch(e) {
+    badge.className = 'badge badge-error';
+    badge.textContent = '✗ Invalid JSON';
+    msg.textContent = e.message;
+    showError('output', e.message);
+    return;
+  }
+
+  const indent = parseInt(document.getElementById('indent').value);
+  const sort = document.getElementById('sortKeys').checked;
+  const data = sort ? sortKeysDeep(parsed) : parsed;
+  showOutput('output', JSON.stringify(data, null, indent));
+}
+
+function minify() {
+  const raw = document.getElementById('input').value.trim();
+  if (!raw) return;
+  try {
+    showOutput('output', JSON.stringify(JSON.parse(raw)));
+  } catch(e) {
+    showError('output', e.message);
+  }
+}
+
+function countNodes(val, count = 0) {
+  if (Array.isArray(val)) return val.reduce((c, v) => countNodes(v, c), count + val.length);
+  if (val && typeof val === 'object') return Object.values(val).reduce((c, v) => countNodes(v, c), count + Object.keys(val).length);
+  return count + 1;
+}
+
+function loadExample() {
+  document.getElementById('input').value = JSON.stringify(EXAMPLE);
+  format();
+}
+
+function clearAll() {
+  document.getElementById('input').value = '';
+  document.getElementById('output').textContent = 'Formatted JSON will appear here...';
+  document.getElementById('statusRow').style.display = 'none';
+}
+
+setupCopyBtn('output', 'copyBtn');
+</script>
+</body>
+</html>

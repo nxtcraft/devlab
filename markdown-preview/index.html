@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Markdown Preview Online — Live Markdown to HTML</title>
+  <meta name="description" content="Write Markdown and see the rendered HTML preview in real time. Free online Markdown editor with live preview. No signup, no server.">
+  <link rel="canonical" href="https://devtoolbox.dev/markdown-preview/">
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .editor-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 680px) { .editor-layout { grid-template-columns: 1fr; } }
+    .preview-pane {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      overflow-y: auto;
+      max-height: 600px;
+      min-height: 400px;
+    }
+    .preview-pane h1,.preview-pane h2,.preview-pane h3,.preview-pane h4 { margin: 1.2em 0 .6em; line-height: 1.3; }
+    .preview-pane h1 { font-size: 1.8em; border-bottom: 1px solid var(--border); padding-bottom: .4em; }
+    .preview-pane h2 { font-size: 1.4em; border-bottom: 1px solid var(--border); padding-bottom: .3em; }
+    .preview-pane p { margin: .8em 0; }
+    .preview-pane code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); font-size: .9em; }
+    .preview-pane pre { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; overflow-x: auto; margin: 1em 0; }
+    .preview-pane pre code { background: none; padding: 0; }
+    .preview-pane blockquote { border-left: 3px solid var(--accent); padding: .5em 1em; margin: 1em 0; color: var(--text-muted); background: var(--surface2); border-radius: 0 var(--radius) var(--radius) 0; }
+    .preview-pane ul,.preview-pane ol { padding-left: 1.5em; margin: .8em 0; }
+    .preview-pane li { margin: .3em 0; }
+    .preview-pane table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+    .preview-pane th,.preview-pane td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; }
+    .preview-pane th { background: var(--surface2); font-weight: 700; }
+    .preview-pane hr { border: none; border-top: 1px solid var(--border); margin: 1.5em 0; }
+    .preview-pane a { color: var(--accent); }
+    .preview-pane img { max-width: 100%; border-radius: var(--radius); }
+    .preview-pane .task-item { list-style: none; margin-left: -1.2em; }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="../index.html">Dev<span>Toolbox</span></a>
+  <ul class="nav-links">
+    <li><a href="../json-formatter/">JSON</a></li>
+    <li><a href="../sql-formatter/">SQL</a></li>
+    <li><a href="../diff-checker/">Diff</a></li>
+    <li><a href="../regex-tester/">Regex</a></li>
+    <li><a href="../hash-generator/">Hash</a></li>
+    <li><a href="../uuid-generator/">UUID</a></li>
+  </ul>
+</nav>
+
+<div class="container" style="max-width:1200px">
+  <div class="page-header">
+    <h1>Markdown Preview</h1>
+    <p>Write Markdown on the left, see the live rendered output on the right. No external libraries.</p>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
+    <button class="btn btn-secondary" onclick="copyHTML()">Copy HTML</button>
+    <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+    <span id="wordCount" style="font-size:13px;color:var(--text-muted);align-self:center;margin-left:4px"></span>
+  </div>
+
+  <div class="editor-layout">
+    <div>
+      <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Markdown</div>
+      <textarea id="mdInput" rows="24" style="min-height:400px;resize:vertical" spellcheck="false" oninput="render()"></textarea>
+    </div>
+    <div>
+      <div style="font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Preview</div>
+      <div class="preview-pane" id="preview"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p><a href="../index.html">DevToolbox</a> · Markdown Preview · Free &amp; Private</p>
+</footer>
+
+<script src="../js/utils.js"></script>
+<script>
+// Pure JS Markdown parser
+function parseMarkdown(md) {
+  let html = md;
+
+  // Escape HTML first
+  html = html.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // Code blocks (``` ... ```)
+  html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+    `<pre><code class="lang-${lang}">${code.trim()}</code></pre>`);
+
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Headings
+  html = html.replace(/^#{6}\s+(.+)$/gm, '<h6>$1</h6>');
+  html = html.replace(/^#{5}\s+(.+)$/gm, '<h5>$1</h5>');
+  html = html.replace(/^#{4}\s+(.+)$/gm, '<h4>$1</h4>');
+  html = html.replace(/^#{3}\s+(.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^#{2}\s+(.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+
+  // Horizontal rule
+  html = html.replace(/^[-*_]{3,}$/gm, '<hr>');
+
+  // Blockquotes
+  html = html.replace(/^&gt;\s+(.+)$/gm, '<blockquote>$1</blockquote>');
+  // Merge adjacent blockquotes
+  html = html.replace(/<\/blockquote>\n<blockquote>/g, '\n');
+
+  // Task lists
+  html = html.replace(/^- \[x\]\s+(.+)$/gm, '<li class="task-item">☑ $1</li>');
+  html = html.replace(/^- \[ \]\s+(.+)$/gm, '<li class="task-item">☐ $1</li>');
+
+  // Unordered lists
+  html = html.replace(/^[-*+]\s+(.+)$/gm, '<li>$1</li>');
+  html = html.replace(/((?:<li>[\s\S]*?<\/li>\n?)+)/g, '<ul>$1</ul>');
+
+  // Ordered lists
+  html = html.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+
+  // Bold + Italic
+  html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  html = html.replace(/___(.+?)___/g, '<strong><em>$1</em></strong>');
+  // Bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  // Italic
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+  // Strikethrough
+  html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
+
+  // Images
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+  // Links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+  // Tables
+  html = html.replace(/((?:\|.+\|\n)+)/g, tbl => {
+    const rows = tbl.trim().split('\n').filter(r => !/^\s*\|[\s|:-]+\|\s*$/.test(r));
+    if (rows.length < 1) return tbl;
+    const toRow = (row, isHeader) => {
+      const cells = row.split('|').slice(1,-1).map(c => c.trim());
+      const tag = isHeader ? 'th' : 'td';
+      return '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
+    };
+    return '<table>' + rows.map((r,i) => toRow(r, i===0)).join('') + '</table>';
+  });
+
+  // Paragraphs
+  html = html.replace(/\n\n+/g, '\n\n');
+  html = html.split('\n\n').map(block => {
+    if (/<(h[1-6]|ul|ol|li|pre|blockquote|table|hr)/.test(block)) return block;
+    if (block.trim()) return '<p>' + block.replace(/\n/g,'<br>') + '</p>';
+    return '';
+  }).join('\n');
+
+  return html;
+}
+
+function render() {
+  const md = document.getElementById('mdInput').value;
+  document.getElementById('preview').innerHTML = parseMarkdown(md);
+  const words = md.trim().split(/\s+/).filter(Boolean).length;
+  const chars = md.length;
+  document.getElementById('wordCount').textContent = `${words} words · ${chars} chars`;
+}
+
+function copyHTML() {
+  navigator.clipboard.writeText(document.getElementById('preview').innerHTML);
+}
+
+function clearAll() {
+  document.getElementById('mdInput').value = '';
+  render();
+}
+
+const EXAMPLE = `# Markdown Preview Demo
+
+Write **Markdown** on the left and see the *live* preview here.
+
+## Features
+
+- **Bold** and *italic* text
+- \`inline code\`
+- [Links](https://example.com)
+- Tables, blockquotes, and more
+
+## Code Block
+
+\`\`\`javascript
+function hello(name) {
+  return \`Hello, \${name}!\`;
+}
+\`\`\`
+
+## Table
+
+| Column 1 | Column 2 | Column 3 |
+|----------|----------|----------|
+| Row 1    | Data     | More     |
+| Row 2    | Data     | More     |
+
+> This is a blockquote — great for callouts and notes.
+
+---
+
+- [x] Task complete
+- [ ] Task pending
+`;
+
+function loadExample() {
+  document.getElementById('mdInput').value = EXAMPLE;
+  render();
+}
+
+loadExample();
+</script>
+</body>
+</html>

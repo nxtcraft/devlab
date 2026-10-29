@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Text Diff Checker Online — Compare Two Texts Free</title>
+  <meta name="description" content="Compare two text blocks side-by-side online. Highlights added and removed lines. Free, instant, no data sent to server.">
+  <link rel="canonical" href="https://devtoolbox.dev/diff-checker/">
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .diff-view { font-family: var(--font-mono); font-size: 13px; line-height: 1.7; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: auto; max-height: 500px; }
+    .diff-line { padding: 1px 12px; white-space: pre-wrap; word-break: break-word; display: flex; gap: 8px; }
+    .diff-line-num { color: var(--text-muted); min-width: 32px; text-align: right; user-select: none; }
+    .diff-add { background: rgba(63,185,80,.15); color: var(--success); }
+    .diff-remove { background: rgba(248,81,73,.15); color: var(--error); }
+    .diff-context { color: var(--text-muted); }
+    .diff-marker { min-width: 12px; }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="../index.html">Dev<span>Toolbox</span></a>
+  <ul class="nav-links">
+    <li><a href="../json-formatter/">JSON</a></li>
+    <li><a href="../sql-formatter/">SQL</a></li>
+    <li><a href="../regex-tester/">Regex</a></li>
+    <li><a href="../hash-generator/">Hash</a></li>
+    <li><a href="../uuid-generator/">UUID</a></li>
+    <li><a href="../markdown-preview/">Markdown</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Text Diff Checker</h1>
+    <p>Paste two texts to compare them. Added lines are shown in green, removed lines in red.</p>
+  </div>
+
+  <div class="two-col">
+    <div class="tool-card">
+      <h2>Original (Left)</h2>
+      <textarea id="left" placeholder="Original text..." rows="10" spellcheck="false"></textarea>
+    </div>
+    <div class="tool-card">
+      <h2>Modified (Right)</h2>
+      <textarea id="right" placeholder="Modified text..." rows="10" spellcheck="false"></textarea>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="runDiff()">Compare</button>
+    <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
+    <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+  </div>
+
+  <div id="statsBar" style="display:none;margin-top:12px;display:none;gap:12px;flex-wrap:wrap"></div>
+
+  <div id="diffOut" class="diff-view" style="margin-top:16px;display:none"></div>
+</div>
+
+<footer>
+  <p><a href="../index.html">DevToolbox</a> · Text Diff Checker · Free &amp; Private</p>
+</footer>
+
+<script src="../js/utils.js"></script>
+<script>
+// Simple LCS-based line diff
+function lcs(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1]+1 : Math.max(dp[i-1][j], dp[i][j-1]);
+  return dp;
+}
+
+function buildDiff(a, b) {
+  const dp = lcs(a, b);
+  const result = [];
+  let i = a.length, j = b.length;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && a[i-1] === b[j-1]) {
+      result.unshift({ type: 'context', line: a[i-1] });
+      i--; j--;
+    } else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) {
+      result.unshift({ type: 'add', line: b[j-1] });
+      j--;
+    } else {
+      result.unshift({ type: 'remove', line: a[i-1] });
+      i--;
+    }
+  }
+  return result;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function runDiff() {
+  const left = document.getElementById('left').value;
+  const right = document.getElementById('right').value;
+
+  const a = left.split('\n');
+  const b = right.split('\n');
+
+  const diff = buildDiff(a, b);
+
+  let adds = 0, removes = 0, lineNum = 0;
+  const html = diff.map(d => {
+    const cls = d.type === 'add' ? 'diff-add' : d.type === 'remove' ? 'diff-remove' : 'diff-context';
+    const marker = d.type === 'add' ? '+' : d.type === 'remove' ? '−' : ' ';
+    if (d.type !== 'remove') lineNum++;
+    if (d.type === 'add') adds++;
+    if (d.type === 'remove') removes++;
+    const num = d.type === 'remove' ? '' : lineNum;
+    return `<div class="diff-line ${cls}"><span class="diff-line-num">${num}</span><span class="diff-marker" style="color:${d.type==='add'?'var(--success)':d.type==='remove'?'var(--error)':'var(--border)'}">${marker}</span><span>${escHtml(d.line)}</span></div>`;
+  }).join('');
+
+  const out = document.getElementById('diffOut');
+  out.innerHTML = html || '<div class="diff-line diff-context"><span class="diff-line-num">—</span><span>Files are identical</span></div>';
+  out.style.display = 'block';
+
+  const stats = document.getElementById('statsBar');
+  stats.style.display = 'flex';
+  stats.innerHTML = `
+    <span class="badge badge-success">+${adds} added</span>
+    <span class="badge badge-error">−${removes} removed</span>
+    <span class="badge" style="background:var(--surface2);color:var(--text)">${diff.filter(d=>d.type==='context').length} unchanged</span>
+  `;
+}
+
+function loadExample() {
+  document.getElementById('left').value = `function greet(name) {
+  console.log("Hello, " + name);
+  return name;
+}
+
+const users = ["Alice", "Bob"];
+users.forEach(u => greet(u));`;
+
+  document.getElementById('right').value = `function greet(name, greeting = "Hello") {
+  console.log(\`\${greeting}, \${name}!\`);
+  return { name, greeted: true };
+}
+
+const users = ["Alice", "Bob", "Carol"];
+users.forEach(u => greet(u));
+console.log("Done");`;
+  runDiff();
+}
+
+function clearAll() {
+  document.getElementById('left').value = '';
+  document.getElementById('right').value = '';
+  document.getElementById('diffOut').style.display = 'none';
+  document.getElementById('statsBar').style.display = 'none';
+}
+</script>
+</body>
+</html>

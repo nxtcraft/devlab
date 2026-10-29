@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cron Expression Generator &amp; Explainer — Free Online Tool</title>
+  <meta name="description" content="Generate and explain cron expressions visually. See next 10 run times, build schedules with a UI builder, validate cron syntax. Free, no signup.">
+  <link rel="canonical" href="https://devtoolbox.dev/cron-generator/">
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="../index.html">Dev<span>Toolbox</span></a>
+  <ul class="nav-links">
+    <li><a href="../json-formatter/">JSON</a></li>
+    <li><a href="../sql-formatter/">SQL</a></li>
+    <li><a href="../jwt-decoder/">JWT</a></li>
+    <li><a href="../epoch-converter/">Epoch</a></li>
+    <li><a href="../base64/">Base64</a></li>
+    <li><a href="../regex-tester/">Regex</a></li>
+    <li><a href="../uuid-generator/">UUID</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Cron Expression Generator</h1>
+    <p>Build, explain, and validate cron schedules. See exactly when your job will run next.</p>
+  </div>
+
+  <div class="tool-card">
+    <h2>Cron Expression</h2>
+    <input type="text" id="cronInput" value="0 9 * * 1-5" placeholder="* * * * *" style="font-size:18px;letter-spacing:2px;font-weight:700" spellcheck="false">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px;font-size:11px;color:var(--text-muted);text-align:center">
+      <span>Minute<br>0-59</span>
+      <span>Hour<br>0-23</span>
+      <span>Day of Month<br>1-31</span>
+      <span>Month<br>1-12</span>
+      <span>Day of Week<br>0-7 (Sun=0,7)</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="parseCron()">Explain &amp; Preview</button>
+    </div>
+  </div>
+
+  <div class="tool-card">
+    <h2>Quick Presets</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="setPreset('* * * * *')">Every minute</button>
+      <button class="btn btn-secondary" onclick="setPreset('0 * * * *')">Every hour</button>
+      <button class="btn btn-secondary" onclick="setPreset('0 0 * * *')">Daily midnight</button>
+      <button class="btn btn-secondary" onclick="setPreset('0 9 * * 1-5')">Weekdays 9am</button>
+      <button class="btn btn-secondary" onclick="setPreset('0 0 * * 0')">Weekly Sunday</button>
+      <button class="btn btn-secondary" onclick="setPreset('0 0 1 * *')">Monthly 1st</button>
+      <button class="btn btn-secondary" onclick="setPreset('*/5 * * * *')">Every 5 min</button>
+      <button class="btn btn-secondary" onclick="setPreset('0 0 1 1 *')">Yearly Jan 1st</button>
+    </div>
+  </div>
+
+  <div class="tool-card" id="resultCard" style="display:none">
+    <div id="humanReadable" style="font-size:16px;font-weight:600;color:var(--accent);margin-bottom:12px"></div>
+    <h2>Next 10 Run Times</h2>
+    <div id="runTimes" style="font-family:var(--font-mono);font-size:13px;line-height:2"></div>
+  </div>
+
+  <div id="errorCard" class="info-box" style="display:none;border-color:rgba(248,81,73,.3);background:rgba(248,81,73,.08)">
+    <span style="color:var(--error)" id="errorMsg"></span>
+  </div>
+
+  <div class="info-box" style="margin-top:12px">
+    <strong>Syntax:</strong> <code>*</code> = any · <code>*/n</code> = every n · <code>n-m</code> = range · <code>n,m</code> = list
+  </div>
+</div>
+
+<footer>
+  <p><a href="../index.html">DevToolbox</a> · Cron Expression Generator · Free &amp; Private</p>
+</footer>
+
+<script src="../js/utils.js"></script>
+<script>
+function setPreset(val) {
+  document.getElementById('cronInput').value = val;
+  parseCron();
+}
+
+function parseCron() {
+  const expr = document.getElementById('cronInput').value.trim();
+  const parts = expr.split(/\s+/);
+  document.getElementById('resultCard').style.display = 'none';
+  document.getElementById('errorCard').style.display = 'none';
+
+  if (parts.length !== 5) {
+    document.getElementById('errorMsg').textContent = 'A cron expression must have exactly 5 fields: minute hour day month weekday';
+    document.getElementById('errorCard').style.display = 'block';
+    return;
+  }
+
+  const [min, hour, dom, month, dow] = parts;
+
+  try {
+    const desc = buildDescription(min, hour, dom, month, dow);
+    document.getElementById('humanReadable').textContent = desc;
+
+    const times = getNextTimes(parts, 10);
+    document.getElementById('runTimes').innerHTML = times.map((t, i) =>
+      `<div><span style="color:var(--text-muted);min-width:28px;display:inline-block">${i+1}.</span> ${formatDate(t)}</div>`
+    ).join('');
+
+    document.getElementById('resultCard').style.display = 'block';
+  } catch(e) {
+    document.getElementById('errorMsg').textContent = e.message;
+    document.getElementById('errorCard').style.display = 'block';
+  }
+}
+
+function buildDescription(min, hour, dom, month, dow) {
+  const MONTHS = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+  let parts = [];
+
+  // Time
+  if (min === '*' && hour === '*') parts.push('every minute');
+  else if (min.startsWith('*/')) parts.push(`every ${min.slice(2)} minutes`);
+  else if (hour === '*') parts.push(`at minute ${min} of every hour`);
+  else parts.push(`at ${hour.padStart(2,'0')}:${min.padStart(2,'0')}`);
+
+  // Month
+  if (month !== '*') {
+    const ms = month.split(',').map(m => MONTHS[parseInt(m)] || m);
+    parts.push(`in ${ms.join(', ')}`);
+  }
+
+  // Day of week
+  if (dow !== '*' && dow !== '?' ) {
+    const ds = dow.split(',').flatMap(d => {
+      if (d.includes('-')) {
+        const [s,e] = d.split('-').map(Number);
+        const r = [];
+        for (let i = s; i <= e; i++) r.push(DAYS[i]);
+        return r;
+      }
+      return [DAYS[parseInt(d)]];
+    });
+    parts.push(`on ${ds.join(', ')}`);
+  }
+
+  // Day of month
+  if (dom !== '*' && dom !== '?') {
+    parts.push(`on day ${dom} of the month`);
+  }
+
+  return 'Runs ' + parts.join(', ');
+}
+
+// Simple cron next-run calculator
+function getNextTimes(parts, count) {
+  const [minF, hourF, domF, monthF, dowF] = parts;
+  const results = [];
+  let d = new Date();
+  d.setSeconds(0, 0);
+  d.setMinutes(d.getMinutes() + 1);
+
+  let iterations = 0;
+  while (results.length < count && iterations < 200000) {
+    iterations++;
+    if (matchField(d.getMonth() + 1, monthF, 1, 12) &&
+        matchField(d.getDate(), domF, 1, 31) &&
+        matchField(d.getDay(), dowF, 0, 7) &&
+        matchField(d.getHours(), hourF, 0, 23) &&
+        matchField(d.getMinutes(), minF, 0, 59)) {
+      results.push(new Date(d));
+    }
+    d.setMinutes(d.getMinutes() + 1);
+  }
+  return results;
+}
+
+function matchField(val, expr, min, max) {
+  if (expr === '*' || expr === '?') return true;
+  for (const part of expr.split(',')) {
+    if (part.startsWith('*/')) {
+      const step = parseInt(part.slice(2));
+      if ((val - min) % step === 0) return true;
+    } else if (part.includes('-')) {
+      const [s, e] = part.split('-').map(Number);
+      if (val >= s && val <= e) return true;
+    } else {
+      const n = parseInt(part);
+      // DOW: 7 also means Sunday (0)
+      if (val === n || (n === 7 && val === 0)) return true;
+    }
+  }
+  return false;
+}
+
+function formatDate(d) {
+  const opts = { weekday:'short', year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false };
+  return d.toLocaleString('en-US', opts);
+}
+
+// Auto-parse on input
+document.getElementById('cronInput').addEventListener('input', parseCron);
+parseCron();
+</script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Epoch Timestamp Converter — Unix Time to Date Online</title>
+  <meta name="description" content="Convert Unix epoch timestamps to human-readable dates and back. Supports seconds and milliseconds. Free online tool, no signup required.">
+  <link rel="canonical" href="https://devtoolbox.dev/epoch-converter/">
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="../index.html">Dev<span>Toolbox</span></a>
+  <ul class="nav-links">
+    <li><a href="../json-formatter/">JSON</a></li>
+    <li><a href="../sql-formatter/">SQL</a></li>
+    <li><a href="../jwt-decoder/">JWT</a></li>
+    <li><a href="../base64/">Base64</a></li>
+    <li><a href="../regex-tester/">Regex</a></li>
+    <li><a href="../hash-generator/">Hash</a></li>
+    <li><a href="../uuid-generator/">UUID</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Epoch / Unix Timestamp Converter</h1>
+    <p>Convert between Unix timestamps and human-readable dates. Supports seconds and milliseconds.</p>
+  </div>
+
+  <!-- Live current time -->
+  <div class="tool-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">CURRENT UNIX TIMESTAMP</div>
+      <div id="liveSec" style="font-size:26px;font-weight:700;font-family:var(--font-mono);color:var(--accent)">...</div>
+      <div id="liveMs" style="font-size:13px;font-family:var(--font-mono);color:var(--text-muted);margin-top:2px">...</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">LOCAL TIME</div>
+      <div id="liveDate" style="font-size:15px;font-weight:600">...</div>
+      <div id="liveUtc" style="font-size:13px;color:var(--text-muted);margin-top:2px">...</div>
+    </div>
+  </div>
+
+  <!-- Epoch → Date -->
+  <div class="tool-card">
+    <h2>Epoch → Human Date</h2>
+    <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <input type="number" id="epochIn" placeholder="1700000000" style="font-size:16px">
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <label style="font-size:13px;display:flex;align-items:center;gap:6px">
+            <input type="radio" name="unit" value="s" checked style="width:auto;accent-color:var(--accent)"> Seconds (s)
+          </label>
+          <label style="font-size:13px;display:flex;align-items:center;gap:6px">
+            <input type="radio" name="unit" value="ms" style="width:auto;accent-color:var(--accent)"> Milliseconds (ms)
+          </label>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="epochToDate()" style="margin-top:2px">Convert</button>
+      <button class="btn btn-secondary" onclick="useNow()" style="margin-top:2px">Use Now</button>
+    </div>
+    <div id="epochResult" style="display:none;margin-top:16px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:var(--font-mono)">
+        <tbody id="epochTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Date → Epoch -->
+  <div class="tool-card">
+    <h2>Human Date → Epoch</h2>
+    <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">
+      <input type="datetime-local" id="dateIn" style="flex:1;min-width:200px;font-size:14px">
+      <button class="btn btn-primary" onclick="dateToEpoch()" style="margin-top:2px">Convert</button>
+    </div>
+    <div id="dateResult" style="display:none;margin-top:16px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:var(--font-mono)">
+        <tbody id="dateTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>What is a Unix timestamp?</strong> A Unix epoch timestamp counts the number of seconds (or milliseconds) since January 1, 1970 00:00:00 UTC. It's timezone-independent and widely used in databases, APIs, and log files.
+  </div>
+</div>
+
+<footer>
+  <p><a href="../index.html">DevToolbox</a> · Epoch Timestamp Converter · Free &amp; Private</p>
+</footer>
+
+<script src="../js/utils.js"></script>
+<script>
+// Live clock
+function updateClock() {
+  const now = new Date();
+  const s = Math.floor(now.getTime() / 1000);
+  const ms = now.getTime();
+  document.getElementById('liveSec').textContent = s.toLocaleString();
+  document.getElementById('liveMs').textContent = ms.toLocaleString() + ' ms';
+  document.getElementById('liveDate').textContent = now.toLocaleString();
+  document.getElementById('liveUtc').textContent = now.toUTCString();
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+function row(label, value) {
+  return `<tr style="border-bottom:1px solid var(--border)">
+    <td style="padding:8px;color:var(--text-muted);width:160px">${label}</td>
+    <td style="padding:8px">${value}</td>
+  </tr>`;
+}
+
+function epochToDate() {
+  const raw = document.getElementById('epochIn').value.trim();
+  if (!raw) return;
+  const unit = document.querySelector('input[name=unit]:checked').value;
+  let ts = parseFloat(raw);
+  if (isNaN(ts)) return;
+  const ms = unit === 'ms' ? ts : ts * 1000;
+  const d = new Date(ms);
+
+  const rows = [
+    row('Local time', d.toLocaleString()),
+    row('UTC', d.toUTCString()),
+    row('ISO 8601', d.toISOString()),
+    row('Unix (seconds)', Math.floor(ms/1000).toLocaleString()),
+    row('Unix (milliseconds)', ms.toLocaleString()),
+    row('Relative', timeAgo(d)),
+  ];
+
+  document.getElementById('epochTable').innerHTML = rows.join('');
+  document.getElementById('epochResult').style.display = 'block';
+}
+
+function dateToEpoch() {
+  const val = document.getElementById('dateIn').value;
+  if (!val) return;
+  const d = new Date(val);
+  const s = Math.floor(d.getTime() / 1000);
+  const ms = d.getTime();
+
+  const rows = [
+    row('Unix (seconds)', s.toLocaleString()),
+    row('Unix (milliseconds)', ms.toLocaleString()),
+    row('UTC', d.toUTCString()),
+    row('ISO 8601', d.toISOString()),
+  ];
+
+  document.getElementById('dateTable').innerHTML = rows.join('');
+  document.getElementById('dateResult').style.display = 'block';
+}
+
+function useNow() {
+  document.getElementById('epochIn').value = Math.floor(Date.now() / 1000);
+  document.querySelector('input[name=unit][value=s]').checked = true;
+  epochToDate();
+}
+
+function timeAgo(d) {
+  const secs = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (secs < 0) return 'in ' + formatDiff(-secs);
+  if (secs < 5) return 'just now';
+  return formatDiff(secs) + ' ago';
+}
+
+function formatDiff(secs) {
+  if (secs < 60) return secs + 's';
+  if (secs < 3600) return Math.floor(secs/60) + 'm';
+  if (secs < 86400) return Math.floor(secs/3600) + 'h';
+  if (secs < 2592000) return Math.floor(secs/86400) + 'd';
+  if (secs < 31536000) return Math.floor(secs/2592000) + 'mo';
+  return Math.floor(secs/31536000) + 'y';
+}
+
+// Pre-fill datetime input with now
+const now = new Date();
+const pad = n => String(n).padStart(2,'0');
+document.getElementById('dateIn').value =
+  `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+</script>
+</body>
+</html>

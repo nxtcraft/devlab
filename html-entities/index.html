@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HTML Entity Encoder Decoder Online — Free Tool</title>
+  <meta name="description" content="Encode special characters to HTML entities and decode them back. Supports &amp;amp; &amp;lt; &amp;gt; and all named entities. Free, no server.">
+  <link rel="canonical" href="https://devtoolbox.dev/html-entities/">
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="../index.html">Dev<span>Toolbox</span></a>
+  <ul class="nav-links">
+    <li><a href="../json-formatter/">JSON</a></li>
+    <li><a href="../base64/">Base64</a></li>
+    <li><a href="../url-encoder/">URL</a></li>
+    <li><a href="../regex-tester/">Regex</a></li>
+    <li><a href="../hash-generator/">Hash</a></li>
+    <li><a href="../uuid-generator/">UUID</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>HTML Entity Encoder / Decoder</h1>
+    <p>Encode special characters to HTML entities, or decode HTML entities back to plain text.</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(this,'encode')">Encode</button>
+    <button class="tab" onclick="switchTab(this,'decode')">Decode</button>
+  </div>
+
+  <div id="tab-encode">
+    <div class="tool-card">
+      <h2>Text with Special Characters</h2>
+      <textarea id="encIn" placeholder='<script>alert("XSS")</script>' rows="6" spellcheck="false" oninput="encodeEntities()"></textarea>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px">
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px">
+          <input type="radio" name="encMode" value="named" checked style="width:auto;accent-color:var(--accent)" onchange="encodeEntities()"> Named entities (&amp;amp;)
+        </label>
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px">
+          <input type="radio" name="encMode" value="numeric" style="width:auto;accent-color:var(--accent)" onchange="encodeEntities()"> Numeric (&#38;#38;)
+        </label>
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px">
+          <input type="radio" name="encMode" value="hex" style="width:auto;accent-color:var(--accent)" onchange="encodeEntities()"> Hex (&#x26;)
+        </label>
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px">
+          <input type="checkbox" id="encodeAll" style="width:auto;accent-color:var(--accent)" onchange="encodeEntities()"> Encode all chars
+        </label>
+      </div>
+    </div>
+    <div class="output-wrapper">
+      <div class="output-label">Encoded Output</div>
+      <button class="copy-btn" id="copyEnc">Copy</button>
+      <pre class="output" id="encOut"></pre>
+    </div>
+  </div>
+
+  <div id="tab-decode" style="display:none">
+    <div class="tool-card">
+      <h2>HTML with Entities</h2>
+      <textarea id="decIn" placeholder="&lt;b&gt;Hello &amp; World&lt;/b&gt;" rows="6" spellcheck="false" oninput="decodeEntities()"></textarea>
+    </div>
+    <div class="output-wrapper">
+      <div class="output-label">Decoded Text</div>
+      <button class="copy-btn" id="copyDec">Copy</button>
+      <pre class="output" id="decOut"></pre>
+    </div>
+    <div class="tool-card" style="margin-top:16px">
+      <h2>Rendered Preview</h2>
+      <div id="preview" style="font-size:14px;line-height:1.7;min-height:40px;padding:4px"></div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>Common entities:</strong>
+    <code>&amp;amp;</code> = &amp; · <code>&amp;lt;</code> = &lt; · <code>&amp;gt;</code> = &gt; · <code>&amp;quot;</code> = " · <code>&amp;apos;</code> = ' · <code>&amp;nbsp;</code> = non-breaking space
+  </div>
+</div>
+
+<footer>
+  <p><a href="../index.html">DevToolbox</a> · HTML Entity Encoder · Free &amp; Private</p>
+</footer>
+
+<script src="../js/utils.js"></script>
+<script>
+const NAMED = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;','©':'&copy;','®':'&reg;','™':'&trade;','€':'&euro;','£':'&pound;','¥':'&yen;','°':'&deg;','±':'&plusmn;','×':'&times;','÷':'&divide;','µ':'&micro;','§':'&sect;','¶':'&para;','†':'&dagger;','‡':'&Dagger;','•':'&bull;','…':'&hellip;','–':'&ndash;','—':'&mdash;','←':'&larr;','→':'&rarr;','↑':'&uarr;','↓':'&darr;','↔':'&harr;'};
+const BASIC = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'};
+
+function encodeEntities() {
+  const text = document.getElementById('encIn').value;
+  const mode = document.querySelector('input[name=encMode]:checked').value;
+  const all = document.getElementById('encodeAll').checked;
+
+  const result = text.replace(/./gu, ch => {
+    const cp = ch.codePointAt(0);
+    if (!all && cp < 128 && !BASIC[ch]) return ch;
+    if (mode === 'named' && NAMED[ch]) return NAMED[ch];
+    if (mode === 'named' && !all && cp < 128 && !BASIC[ch]) return ch;
+    if (mode === 'numeric') return `&#${cp};`;
+    if (mode === 'hex') return `&#x${cp.toString(16).toUpperCase()};`;
+    if (NAMED[ch]) return NAMED[ch];
+    if (cp > 127) return `&#${cp};`;
+    return ch;
+  });
+
+  showOutput('encOut', result);
+}
+
+function decodeEntities() {
+  const text = document.getElementById('decIn').value;
+  const el = Object.assign(document.createElement('textarea'), { innerHTML: text });
+  const decoded = el.value;
+  showOutput('decOut', decoded);
+  document.getElementById('preview').innerHTML = text;
+}
+
+function switchTab(btn, name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['encode','decode'].forEach(t =>
+    document.getElementById('tab-'+t).style.display = t === name ? 'block' : 'none'
+  );
+}
+
+setupCopyBtn('encOut', 'copyEnc');
+setupCopyBtn('decOut', 'copyDec');
+</script>
+</body>
+</html>

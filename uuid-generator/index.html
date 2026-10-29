@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UUID Generator Online — Free UUID v4 Generator</title>
+  <meta name="description" content="Generate UUID v4 and ULID identifiers online for free. Bulk generate up to 100 UUIDs instantly. No data sent to server.">
+  <link rel="canonical" href="https://devtoolbox.dev/uuid-generator/">
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="../index.html">Dev<span>Toolbox</span></a>
+  <ul class="nav-links">
+    <li><a href="../json-formatter/">JSON</a></li>
+    <li><a href="../hash-generator/">Hash</a></li>
+    <li><a href="../base64/">Base64</a></li>
+    <li><a href="../regex-tester/">Regex</a></li>
+    <li><a href="../epoch-converter/">Epoch</a></li>
+    <li><a href="../url-encoder/">URL</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>UUID Generator</h1>
+    <p>Generate cryptographically secure UUID v4 and ULID identifiers. Bulk generate up to 100 at once.</p>
+  </div>
+
+  <div class="tool-card">
+    <h2>Options</h2>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+      <label style="font-size:13px">
+        Type:
+        <select id="uuidType" style="width:140px;margin-left:6px" onchange="generate()">
+          <option value="v4">UUID v4 (random)</option>
+          <option value="nil">Nil UUID</option>
+          <option value="ulid">ULID</option>
+        </select>
+      </label>
+      <label style="font-size:13px">
+        Count:
+        <select id="count" style="width:80px;margin-left:6px" onchange="generate()">
+          <option value="1">1</option>
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </label>
+      <label style="font-size:13px;display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="uppercase" style="width:auto;accent-color:var(--accent)" onchange="generate()"> Uppercase
+      </label>
+      <label style="font-size:13px;display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="noHyphens" style="width:auto;accent-color:var(--accent)" onchange="generate()"> Remove hyphens
+      </label>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="generate()">Generate</button>
+    <button class="btn btn-secondary" onclick="copyAll()">Copy All</button>
+    <button class="btn btn-secondary" onclick="downloadAll()">Download</button>
+  </div>
+
+  <div class="output-wrapper">
+    <div class="output-label">Generated UUIDs</div>
+    <pre class="output" id="output" style="min-height:200px"></pre>
+  </div>
+
+  <div class="info-box" style="margin-top:16px">
+    <strong>UUID v4</strong> is randomly generated using <code>crypto.getRandomValues()</code> — cryptographically secure. A ULID is lexicographically sortable and encodes the timestamp in the first 10 chars. The nil UUID (<code>00000000-0000-0000-0000-000000000000</code>) is used as a placeholder or default value.
+  </div>
+
+  <div class="tool-card" style="margin-top:16px">
+    <h2>Inspect / Validate UUID</h2>
+    <input type="text" id="validateIn" placeholder="Paste a UUID to inspect it..." spellcheck="false" oninput="inspectUUID(this.value)">
+    <div id="inspectResult" style="display:none;margin-top:12px;font-size:13px;font-family:var(--font-mono)"></div>
+  </div>
+</div>
+
+<footer>
+  <p><a href="../index.html">DevToolbox</a> · UUID Generator · Free &amp; Private</p>
+</footer>
+
+<script src="../js/utils.js"></script>
+<script>
+function uuidV4() {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = [...bytes].map(b => b.toString(16).padStart(2,'0')).join('');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
+
+// ULID: 26 chars, timestamp (10) + random (16), base32 Crockford
+function ulid() {
+  const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  const t = Date.now();
+  let timeStr = '';
+  let time = t;
+  for (let i = 9; i >= 0; i--) {
+    timeStr = ENCODING[time % 32] + timeStr;
+    time = Math.floor(time / 32);
+  }
+  let rndStr = '';
+  const rnd = crypto.getRandomValues(new Uint8Array(10));
+  for (let i = 0; i < 16; i++) rndStr += ENCODING[Math.floor(Math.random() * 32)];
+  return timeStr + rndStr;
+}
+
+function generate() {
+  const type = document.getElementById('uuidType').value;
+  const count = parseInt(document.getElementById('count').value);
+  const upper = document.getElementById('uppercase').checked;
+  const noHyphens = document.getElementById('noHyphens').checked;
+
+  const ids = [];
+  for (let i = 0; i < count; i++) {
+    let id;
+    if (type === 'v4') id = uuidV4();
+    else if (type === 'ulid') id = ulid();
+    else id = '00000000-0000-0000-0000-000000000000';
+
+    if (noHyphens) id = id.replace(/-/g,'');
+    if (upper) id = id.toUpperCase();
+    else id = id.toLowerCase();
+    ids.push(id);
+  }
+
+  document.getElementById('output').textContent = ids.join('\n');
+}
+
+function copyAll() {
+  navigator.clipboard.writeText(document.getElementById('output').textContent);
+}
+
+function downloadAll() {
+  const content = document.getElementById('output').textContent;
+  const blob = new Blob([content], { type: 'text/plain' });
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'uuids.txt' });
+  a.click();
+}
+
+function inspectUUID(val) {
+  val = val.trim();
+  const res = document.getElementById('inspectResult');
+  res.style.display = 'none';
+  if (!val) return;
+
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-([1-5])[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const m = val.match(UUID_RE);
+  if (!m) {
+    res.style.display = 'block';
+    res.innerHTML = `<span style="color:var(--error)">✗ Not a valid UUID</span>`;
+    return;
+  }
+  const version = m[1];
+  const variant = parseInt(val.replace(/-/g,'').slice(16,18), 16);
+  const variantStr = variant >= 0b11000000 ? 'Microsoft GUID' : variant >= 0b10000000 ? 'RFC 4122' : 'NCS';
+  res.style.display = 'block';
+  res.innerHTML = `<span style="color:var(--success)">✓ Valid UUID</span>
+<div style="margin-top:6px">Version: <span style="color:var(--accent)">v${version}</span></div>
+<div>Variant: <span style="color:var(--accent)">${variantStr}</span></div>
+<div style="margin-top:6px">Uppercase: ${val.toUpperCase()}</div>
+<div>No hyphens: ${val.replace(/-/g,'')}</div>`;
+}
+
+generate();
+</script>
+</body>
+</html>

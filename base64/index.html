@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Base64 Encoder Decoder Online — Free, Instant</title>
+  <meta name="description" content="Encode or decode Base64 strings online for free. Supports standard Base64, URL-safe Base64, and file encoding. No data sent to server.">
+  <link rel="canonical" href="https://devtoolbox.dev/base64/">
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="../index.html">Dev<span>Toolbox</span></a>
+  <ul class="nav-links">
+    <li><a href="../json-formatter/">JSON</a></li>
+    <li><a href="../jwt-decoder/">JWT</a></li>
+    <li><a href="../epoch-converter/">Epoch</a></li>
+    <li><a href="../url-encoder/">URL</a></li>
+    <li><a href="../regex-tester/">Regex</a></li>
+    <li><a href="../hash-generator/">Hash</a></li>
+    <li><a href="../uuid-generator/">UUID</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Base64 Encoder / Decoder</h1>
+    <p>Encode text or files to Base64, or decode Base64 strings back to text. Supports URL-safe Base64.</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(this, 'encode')">Encode</button>
+    <button class="tab" onclick="switchTab(this, 'decode')">Decode</button>
+    <button class="tab" onclick="switchTab(this, 'file')">File → Base64</button>
+  </div>
+
+  <!-- Encode -->
+  <div id="tab-encode">
+    <div class="tool-card">
+      <h2>Text to Encode</h2>
+      <textarea id="encodeIn" placeholder="Enter text to encode..." spellcheck="false"></textarea>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+          <input type="checkbox" id="urlSafeEncode" style="width:auto;accent-color:var(--accent)"> URL-safe (replace +/= with -/_)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+          <input type="checkbox" id="lineWrap" style="width:auto;accent-color:var(--accent)"> Wrap at 76 chars
+        </label>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="encode()">Encode</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('encodeIn').value='';document.getElementById('encodeOut').textContent=''">Clear</button>
+      </div>
+    </div>
+    <div class="output-wrapper">
+      <div class="output-label">Base64 Output</div>
+      <button class="copy-btn" id="copyEncode">Copy</button>
+      <pre class="output" id="encodeOut"></pre>
+    </div>
+  </div>
+
+  <!-- Decode -->
+  <div id="tab-decode" style="display:none">
+    <div class="tool-card">
+      <h2>Base64 to Decode</h2>
+      <textarea id="decodeIn" placeholder="SGVsbG8sIFdvcmxkIQ==" spellcheck="false"></textarea>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+          <input type="checkbox" id="urlSafeDecode" style="width:auto;accent-color:var(--accent)"> URL-safe input
+        </label>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="decode()">Decode</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('decodeIn').value='';document.getElementById('decodeOut').textContent=''">Clear</button>
+      </div>
+    </div>
+    <div class="output-wrapper">
+      <div class="output-label">Decoded Text</div>
+      <button class="copy-btn" id="copyDecode">Copy</button>
+      <pre class="output" id="decodeOut"></pre>
+    </div>
+  </div>
+
+  <!-- File -->
+  <div id="tab-file" style="display:none">
+    <div class="tool-card">
+      <h2>File to Base64</h2>
+      <div id="dropZone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:32px;text-align:center;cursor:pointer;transition:border-color .15s"
+        ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+        ondragleave="this.style.borderColor='var(--border)'"
+        ondrop="handleDrop(event)">
+        <div style="font-size:24px;margin-bottom:8px">📁</div>
+        <div style="color:var(--text-muted);font-size:14px">Drop a file here or <label for="fileInput" style="color:var(--accent);cursor:pointer;text-decoration:underline">browse</label></div>
+        <input type="file" id="fileInput" style="display:none" onchange="handleFile(this.files[0])">
+      </div>
+      <div id="fileInfo" style="display:none;margin-top:12px;font-size:13px;color:var(--text-muted)"></div>
+    </div>
+    <div class="output-wrapper">
+      <div class="output-label">Base64 Output</div>
+      <button class="copy-btn" id="copyFile">Copy</button>
+      <pre class="output" id="fileOut" style="word-break:break-all"></pre>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>URL-safe Base64</strong> replaces <code>+</code> with <code>-</code> and <code>/</code> with <code>_</code>, and omits padding. Used in JWT tokens and URL parameters.
+  </div>
+</div>
+
+<footer>
+  <p><a href="../index.html">DevToolbox</a> · Base64 Encoder / Decoder · Free &amp; Private</p>
+</footer>
+
+<script src="../js/utils.js"></script>
+<script>
+function switchTab(btn, name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['encode','decode','file'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === name ? 'block' : 'none';
+  });
+}
+
+function toUrlSafe(s) { return s.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, ''); }
+function fromUrlSafe(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  return s;
+}
+
+function encode() {
+  const text = document.getElementById('encodeIn').value;
+  if (!text) return;
+  try {
+    let result = btoa(unescape(encodeURIComponent(text)));
+    if (document.getElementById('urlSafeEncode').checked) result = toUrlSafe(result);
+    if (document.getElementById('lineWrap').checked) result = result.match(/.{1,76}/g).join('\n');
+    showOutput('encodeOut', result);
+  } catch(e) { showError('encodeOut', e.message); }
+}
+
+function decode() {
+  let text = document.getElementById('decodeIn').value.trim().replace(/\s/g, '');
+  if (!text) return;
+  try {
+    if (document.getElementById('urlSafeDecode').checked) text = fromUrlSafe(text);
+    showOutput('decodeOut', decodeURIComponent(escape(atob(text))));
+  } catch(e) { showError('decodeOut', 'Invalid Base64: ' + e.message); }
+}
+
+function handleFile(file) {
+  if (!file) return;
+  document.getElementById('fileInfo').style.display = 'block';
+  document.getElementById('fileInfo').textContent = `${file.name} · ${formatSize(file.size)} · ${file.type || 'unknown type'}`;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const b64 = e.target.result.split(',')[1];
+    showOutput('fileOut', b64);
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').style.borderColor = 'var(--border)';
+  handleFile(e.dataTransfer.files[0]);
+}
+
+function formatSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+setupCopyBtn('encodeOut', 'copyEncode');
+setupCopyBtn('decodeOut', 'copyDecode');
+setupCopyBtn('fileOut', 'copyFile');
+
+// Live encode
+document.getElementById('encodeIn').addEventListener('input', encode);
+document.getElementById('decodeIn').addEventListener('input', decode);
+</script>
+</body>
+</html>

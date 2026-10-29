@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>URL Encoder Decoder Online — Free Percent Encoding Tool</title>
+  <meta name="description" content="Encode or decode URL strings online. Handles percent-encoding, encodeURIComponent, and full URL parsing. Free, no data sent to server.">
+  <link rel="canonical" href="https://devtoolbox.dev/url-encoder/">
+  <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="../index.html">Dev<span>Toolbox</span></a>
+  <ul class="nav-links">
+    <li><a href="../json-formatter/">JSON</a></li>
+    <li><a href="../base64/">Base64</a></li>
+    <li><a href="../regex-tester/">Regex</a></li>
+    <li><a href="../hash-generator/">Hash</a></li>
+    <li><a href="../uuid-generator/">UUID</a></li>
+    <li><a href="../html-entities/">HTML</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>URL Encoder / Decoder</h1>
+    <p>Percent-encode or decode URLs and query string components. Also parses full URLs into their parts.</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(this,'encode')">Encode</button>
+    <button class="tab" onclick="switchTab(this,'decode')">Decode</button>
+    <button class="tab" onclick="switchTab(this,'parse')">Parse URL</button>
+  </div>
+
+  <!-- Encode -->
+  <div id="tab-encode">
+    <div class="tool-card">
+      <h2>Text to Encode</h2>
+      <textarea id="encIn" placeholder="hello world & foo=bar+baz" rows="5" spellcheck="false" oninput="encodeURL()"></textarea>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px">
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px">
+          <input type="radio" name="encMode" value="component" checked style="width:auto;accent-color:var(--accent)" onchange="encodeURL()"> encodeURIComponent (recommended)
+        </label>
+        <label style="font-size:13px;display:flex;align-items:center;gap:6px">
+          <input type="radio" name="encMode" value="full" style="width:auto;accent-color:var(--accent)" onchange="encodeURL()"> encodeURI (preserve :/?#[]@)
+        </label>
+      </div>
+    </div>
+    <div class="output-wrapper">
+      <div class="output-label">Encoded Output</div>
+      <button class="copy-btn" id="copyEnc">Copy</button>
+      <pre class="output" id="encOut"></pre>
+    </div>
+  </div>
+
+  <!-- Decode -->
+  <div id="tab-decode" style="display:none">
+    <div class="tool-card">
+      <h2>Encoded URL / String</h2>
+      <textarea id="decIn" placeholder="hello%20world%20%26%20foo%3Dbar%2Bbaz" rows="5" spellcheck="false" oninput="decodeURL()"></textarea>
+    </div>
+    <div class="output-wrapper">
+      <div class="output-label">Decoded Output</div>
+      <button class="copy-btn" id="copyDec">Copy</button>
+      <pre class="output" id="decOut"></pre>
+    </div>
+  </div>
+
+  <!-- Parse -->
+  <div id="tab-parse" style="display:none">
+    <div class="tool-card">
+      <h2>Full URL to Parse</h2>
+      <input type="text" id="parseIn" placeholder="https://api.example.com/users?page=2&sort=desc#section" oninput="parseURL()" spellcheck="false">
+    </div>
+    <div id="parseResult" style="display:none">
+      <div class="tool-card">
+        <table id="parseTable" style="width:100%;border-collapse:collapse;font-size:13px;font-family:var(--font-mono)"></table>
+      </div>
+      <div class="tool-card" id="queryCard" style="display:none">
+        <h2>Query Parameters</h2>
+        <table id="queryTable" style="width:100%;border-collapse:collapse;font-size:13px;font-family:var(--font-mono)"></table>
+      </div>
+    </div>
+    <div id="parseError" class="info-box" style="display:none;border-color:rgba(248,81,73,.3);background:rgba(248,81,73,.08)">
+      <span style="color:var(--error)" id="parseErrorMsg"></span>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p><a href="../index.html">DevToolbox</a> · URL Encoder / Decoder · Free &amp; Private</p>
+</footer>
+
+<script src="../js/utils.js"></script>
+<script>
+function switchTab(btn, name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['encode','decode','parse'].forEach(t =>
+    document.getElementById('tab-'+t).style.display = t === name ? 'block' : 'none'
+  );
+}
+
+function encodeURL() {
+  const val = document.getElementById('encIn').value;
+  const mode = document.querySelector('input[name=encMode]:checked').value;
+  try {
+    const result = mode === 'component' ? encodeURIComponent(val) : encodeURI(val);
+    showOutput('encOut', result);
+  } catch(e) { showError('encOut', e.message); }
+}
+
+function decodeURL() {
+  const val = document.getElementById('decIn').value;
+  try {
+    showOutput('decOut', decodeURIComponent(val.replace(/\+/g, ' ')));
+  } catch(e) {
+    try { showOutput('decOut', decodeURI(val)); }
+    catch(e2) { showError('decOut', e.message); }
+  }
+}
+
+function row(label, value) {
+  if (!value) return '';
+  return `<tr style="border-bottom:1px solid var(--border)">
+    <td style="padding:8px;color:var(--text-muted);width:100px">${label}</td>
+    <td style="padding:8px;word-break:break-all">${value}</td>
+  </tr>`;
+}
+
+function parseURL() {
+  const val = document.getElementById('parseIn').value.trim();
+  document.getElementById('parseResult').style.display = 'none';
+  document.getElementById('parseError').style.display = 'none';
+  if (!val) return;
+
+  let u;
+  try { u = new URL(val); } catch(e) {
+    document.getElementById('parseErrorMsg').textContent = 'Invalid URL: ' + e.message;
+    document.getElementById('parseError').style.display = 'block';
+    return;
+  }
+
+  const rows = [
+    row('Protocol', u.protocol),
+    row('Host', u.host),
+    row('Hostname', u.hostname),
+    row('Port', u.port || (u.protocol === 'https:' ? '443' : '80') + ' (default)'),
+    row('Pathname', u.pathname),
+    row('Search', u.search),
+    row('Hash', u.hash),
+    row('Username', u.username),
+    row('Password', u.password ? '••••••' : ''),
+    row('Origin', u.origin),
+  ];
+
+  document.getElementById('parseTable').innerHTML = rows.join('');
+
+  const params = [...u.searchParams.entries()];
+  if (params.length) {
+    document.getElementById('queryTable').innerHTML = params.map(([k,v]) =>
+      `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px;color:var(--accent);width:150px">${k}</td>
+        <td style="padding:8px">${v}</td>
+      </tr>`
+    ).join('');
+    document.getElementById('queryCard').style.display = 'block';
+  }
+
+  document.getElementById('parseResult').style.display = 'block';
+}
+
+setupCopyBtn('encOut', 'copyEnc');
+setupCopyBtn('decOut', 'copyDec');
+</script>
+</body>
+</html>

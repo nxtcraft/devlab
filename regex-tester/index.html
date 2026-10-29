@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Regex Tester Online — Test Regular Expressions Free</title>
+  <meta name="description" content="Test regular expressions online with live highlighting. View match groups, named captures, and match counts. Free, no signup, no server.">
+  <link rel="canonical" href="https://devtoolbox.dev/regex-tester/">
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .highlight { background: rgba(88,166,255,.25); border-radius: 2px; }
+    .match-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin: 4px 0; font-family: var(--font-mono); font-size: 13px; }
+    .match-idx { color: var(--accent); font-weight: 700; min-width: 24px; display: inline-block; }
+    .match-val { color: var(--text); }
+    .match-pos { color: var(--text-muted); font-size: 11px; margin-left: 8px; }
+    .group-row { margin-top: 4px; padding-left: 24px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="../index.html">Dev<span>Toolbox</span></a>
+  <ul class="nav-links">
+    <li><a href="../json-formatter/">JSON</a></li>
+    <li><a href="../sql-formatter/">SQL</a></li>
+    <li><a href="../jwt-decoder/">JWT</a></li>
+    <li><a href="../base64/">Base64</a></li>
+    <li><a href="../hash-generator/">Hash</a></li>
+    <li><a href="../uuid-generator/">UUID</a></li>
+    <li><a href="../url-encoder/">URL</a></li>
+  </ul>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Regex Tester</h1>
+    <p>Test regular expressions live with syntax highlighting, match groups, and named captures.</p>
+  </div>
+
+  <div class="tool-card">
+    <h2>Pattern</h2>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span style="font-size:20px;color:var(--text-muted)">/</span>
+      <input type="text" id="pattern" placeholder="([a-z]+)@([a-z]+\.[a-z]{2,})" style="flex:1" spellcheck="false">
+      <span style="font-size:20px;color:var(--text-muted)">/</span>
+      <input type="text" id="flags" placeholder="gi" style="width:60px;text-align:center" maxlength="6" spellcheck="false">
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <label style="font-size:12px;display:flex;align-items:center;gap:5px"><input type="checkbox" id="fg" style="width:auto;accent-color:var(--accent)" onchange="syncFlag('g',this)"> g (global)</label>
+      <label style="font-size:12px;display:flex;align-items:center;gap:5px"><input type="checkbox" id="fi" style="width:auto;accent-color:var(--accent)" onchange="syncFlag('i',this)"> i (case insensitive)</label>
+      <label style="font-size:12px;display:flex;align-items:center;gap:5px"><input type="checkbox" id="fm" style="width:auto;accent-color:var(--accent)" onchange="syncFlag('m',this)"> m (multiline)</label>
+      <label style="font-size:12px;display:flex;align-items:center;gap:5px"><input type="checkbox" id="fs" style="width:auto;accent-color:var(--accent)" onchange="syncFlag('s',this)"> s (dot all)</label>
+    </div>
+    <div id="regexError" style="display:none;color:var(--error);font-size:13px;margin-top:8px"></div>
+  </div>
+
+  <div class="tool-card">
+    <h2>Test String</h2>
+    <div id="highlightOverlay" style="position:relative">
+      <div id="overlay" style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;padding:12px 14px;font-family:var(--font-mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:transparent;border:1px solid transparent;border-radius:var(--radius);overflow:hidden"></div>
+      <textarea id="testStr" placeholder="alice@example.com, bob@test.org, invalid-email" spellcheck="false" style="position:relative;z-index:1;background:transparent" oninput="runMatch()"></textarea>
+    </div>
+    <div id="matchStatus" style="margin-top:8px;font-size:13px;color:var(--text-muted)"></div>
+  </div>
+
+  <div id="matchResults" style="display:none">
+    <div class="tool-card">
+      <h2>Matches</h2>
+      <div id="matchList"></div>
+    </div>
+  </div>
+
+  <div class="tool-card">
+    <h2>Quick Reference</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px;font-size:12px;font-family:var(--font-mono)">
+      <div><span style="color:var(--accent)">.</span> — any character</div>
+      <div><span style="color:var(--accent)">\d</span> — digit [0-9]</div>
+      <div><span style="color:var(--accent)">\w</span> — word char [a-zA-Z0-9_]</div>
+      <div><span style="color:var(--accent)">\s</span> — whitespace</div>
+      <div><span style="color:var(--accent)">[abc]</span> — char class</div>
+      <div><span style="color:var(--accent)">[^abc]</span> — negated class</div>
+      <div><span style="color:var(--accent)">^</span> — start of string</div>
+      <div><span style="color:var(--accent)">$</span> — end of string</div>
+      <div><span style="color:var(--accent)">*</span> — 0 or more</div>
+      <div><span style="color:var(--accent)">+</span> — 1 or more</div>
+      <div><span style="color:var(--accent)">?</span> — 0 or 1</div>
+      <div><span style="color:var(--accent)">{n,m}</span> — n to m times</div>
+      <div><span style="color:var(--accent)">(abc)</span> — capture group</div>
+      <div><span style="color:var(--accent)">(?&lt;name&gt;)</span> — named group</div>
+      <div><span style="color:var(--accent)">(?:abc)</span> — non-capture</div>
+      <div><span style="color:var(--accent)">a|b</span> — alternation</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p><a href="../index.html">DevToolbox</a> · Regex Tester · Free &amp; Private</p>
+</footer>
+
+<script src="../js/utils.js"></script>
+<script>
+function syncFlag(flag, cb) {
+  const f = document.getElementById('flags');
+  let v = f.value.replace(flag, '');
+  if (cb.checked) v += flag;
+  f.value = v;
+  runMatch();
+}
+
+function runMatch() {
+  const pat = document.getElementById('pattern').value;
+  const flags = document.getElementById('flags').value;
+  const str = document.getElementById('testStr').value;
+  const errEl = document.getElementById('regexError');
+
+  errEl.style.display = 'none';
+  document.getElementById('matchStatus').textContent = '';
+  document.getElementById('matchResults').style.display = 'none';
+  document.getElementById('overlay').innerHTML = escHtml(str);
+
+  if (!pat) return;
+
+  let re;
+  try {
+    re = new RegExp(pat, flags.replace('g','') + 'dg'); // ensure global for iteration
+  } catch(e) {
+    errEl.style.display = 'block';
+    errEl.textContent = '⚠ ' + e.message;
+    return;
+  }
+
+  const matches = [];
+  let m;
+  while ((m = re.exec(str)) !== null) {
+    matches.push({ index: m.index, value: m[0], groups: [...m].slice(1), named: m.groups });
+    if (!flags.includes('g')) break;
+  }
+
+  // Highlight in overlay
+  let highlighted = '';
+  let last = 0;
+  const reHighlight = new RegExp(pat, flags.includes('i') ? 'gi' : 'g');
+  str.replace(reHighlight, (match, ...args) => {
+    const offset = args[args.length - 2];
+    highlighted += escHtml(str.slice(last, offset));
+    highlighted += `<mark class="highlight">${escHtml(match)}</mark>`;
+    last = offset + match.length;
+  });
+  highlighted += escHtml(str.slice(last));
+  document.getElementById('overlay').innerHTML = highlighted;
+
+  if (matches.length === 0) {
+    document.getElementById('matchStatus').textContent = '0 matches';
+    return;
+  }
+
+  document.getElementById('matchStatus').textContent = `${matches.length} match${matches.length !== 1 ? 'es' : ''}`;
+
+  const listEl = document.getElementById('matchList');
+  listEl.innerHTML = matches.slice(0, 100).map((m, i) => {
+    let groups = '';
+    if (m.groups.filter(Boolean).length) {
+      groups = m.groups.map((g, gi) => `<div class="group-row">Group ${gi+1}: <span style="color:var(--text)">${escHtml(g ?? 'undefined')}</span></div>`).join('');
+    }
+    if (m.named) {
+      groups += Object.entries(m.named).map(([k,v]) => `<div class="group-row">?&lt;${k}&gt;: <span style="color:var(--text)">${escHtml(v)}</span></div>`).join('');
+    }
+    return `<div class="match-card">
+      <span class="match-idx">#${i+1}</span>
+      <span class="match-val">${escHtml(m.value)}</span>
+      <span class="match-pos">index ${m.index}–${m.index + m.value.length}</span>
+      ${groups}
+    </div>`;
+  }).join('');
+
+  if (matches.length > 100) {
+    listEl.innerHTML += `<div style="color:var(--text-muted);font-size:13px;padding:8px">... and ${matches.length - 100} more matches</div>`;
+  }
+
+  document.getElementById('matchResults').style.display = 'block';
+}
+
+function escHtml(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Sync flag checkboxes with text input
+document.getElementById('flags').addEventListener('input', () => {
+  const f = document.getElementById('flags').value;
+  ['g','i','m','s'].forEach(flag => {
+    const cb = document.getElementById('f' + flag);
+    if (cb) cb.checked = f.includes(flag);
+  });
+  runMatch();
+});
+
+document.getElementById('pattern').addEventListener('input', runMatch);
+
+// Init
+document.getElementById('pattern').value = '([a-z.]+)@([a-z]+\\.[a-z]{2,})';
+document.getElementById('flags').value = 'gi';
+document.getElementById('fg').checked = true;
+document.getElementById('fi').checked = true;
+document.getElementById('testStr').value = 'alice@example.com, BOB@TEST.ORG, charlie@dev.io, not-an-email';
+runMatch();
+</script>
+</body>
+</html>
