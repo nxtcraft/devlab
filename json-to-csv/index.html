@@ -3,14 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>JSON to CSV Converter Online — Free, Instant, No Signup</title>
-  <meta name="description" content="Convert JSON to CSV online for free. Paste your JSON array and instantly download a clean CSV file. Works with nested objects. No data sent to server.">
-  <link rel="canonical" href="https://devtoolbox.dev/json-to-csv/">
+  <title>JSON ↔ CSV Converter Online — Free, Instant, No Signup</title>
+  <meta name="description" content="Convert JSON to CSV or CSV to JSON online for free. Paste your data and instantly convert — bidirectional, no upload, 100% browser-based.">
+  <link rel="canonical" href="https://nxtcraft.github.io/devlab/json-to-csv/">
   <link rel="stylesheet" href="../css/main.css">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R9EW10BJGW"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-R9EW10BJGW');</script>
 </head>
 <body>
 <nav>
-  <a class="nav-logo" href="../index.html">Dev<span>Toolbox</span></a>
+  <a class="nav-logo" href="../index.html">Dev<span>Lab</span></a>
   <ul class="nav-links">
     <li><a href="../json-formatter/">JSON Format</a></li>
     <li><a href="../sql-formatter/">SQL</a></li>
@@ -25,21 +28,26 @@
 
 <div class="container">
   <div class="page-header">
-    <h1>JSON to CSV Converter</h1>
-    <p>Paste a JSON array below and convert it to CSV instantly — no upload, no server, 100% browser-based.</p>
+    <h1>JSON ↔ CSV Converter</h1>
+    <p>Convert JSON to CSV or CSV to JSON instantly — 100% browser-based, no upload required.</p>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <button class="btn btn-primary" id="modeJsonToCsv" onclick="setMode('json2csv')">JSON → CSV</button>
+    <button class="btn btn-secondary" id="modeCsvToJson" onclick="setMode('csv2json')">CSV → JSON</button>
   </div>
 
   <div class="tool-card">
-    <h2>Input — JSON Array</h2>
+    <h2 id="inputLabel">Input — JSON Array</h2>
     <textarea id="input" placeholder='[{"name":"Alice","age":30},{"name":"Bob","age":25}]' spellcheck="false"></textarea>
     <div class="btn-row">
-      <button class="btn btn-primary" onclick="convert()">Convert to CSV</button>
+      <button class="btn btn-primary" id="convertBtn" onclick="convert()">Convert to CSV</button>
       <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
       <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
     </div>
   </div>
 
-  <div class="tool-card">
+  <div class="tool-card" id="optionsCard">
     <h2>Options</h2>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
       <label style="display:flex;align-items:center;gap:8px;font-size:13px">
@@ -61,31 +69,50 @@
   </div>
 
   <div class="output-wrapper">
-    <div class="output-label">Output — CSV</div>
+    <div class="output-label" id="outputLabel">Output — CSV</div>
     <button class="copy-btn" id="copyBtn">Copy</button>
-    <pre class="output" id="output">Your CSV will appear here...</pre>
+    <pre class="output" id="output">Your output will appear here...</pre>
   </div>
 
   <div class="btn-row" style="margin-top:12px">
-    <button class="btn btn-success" onclick="downloadCSV()">⬇ Download CSV</button>
-  </div>
-
-  <div class="info-box">
-    <strong>How it works:</strong> The tool reads the top-level keys from your JSON objects as CSV headers, then maps each object's values into rows. Arrays inside values are joined with a semicolon. Enable <em>Flatten nested objects</em> to expand <code>{"address":{"city":"NY"}}</code> into an <code>address.city</code> column.
+    <button class="btn btn-success" id="downloadBtn" onclick="downloadOutput()">⬇ Download CSV</button>
   </div>
 </div>
 
 <footer>
-  <p><a href="../index.html">DevToolbox</a> · JSON to CSV Converter · Free &amp; Private</p>
+  <p><a href="../index.html">DevLab</a> · JSON ↔ CSV Converter · Free &amp; Private</p>
 </footer>
 
 <script src="../js/utils.js"></script>
 <script>
-const EXAMPLE = [
+let currentMode = 'json2csv';
+
+const JSON_EXAMPLE = [
   {"id":1,"name":"Alice","email":"alice@example.com","score":98,"active":true},
   {"id":2,"name":"Bob","email":"bob@example.com","score":87,"active":false},
   {"id":3,"name":"Carol","email":"carol@example.com","score":92,"active":true}
 ];
+
+const CSV_EXAMPLE = `id,name,email,score,active
+1,Alice,alice@example.com,98,true
+2,Bob,bob@example.com,87,false
+3,Carol,carol@example.com,92,true`;
+
+function setMode(mode) {
+  currentMode = mode;
+  const j2c = mode === 'json2csv';
+  document.getElementById('modeJsonToCsv').className = j2c ? 'btn btn-primary' : 'btn btn-secondary';
+  document.getElementById('modeCsvToJson').className = j2c ? 'btn btn-secondary' : 'btn btn-primary';
+  document.getElementById('inputLabel').textContent = j2c ? 'Input — JSON Array' : 'Input — CSV';
+  document.getElementById('outputLabel').textContent = j2c ? 'Output — CSV' : 'Output — JSON';
+  document.getElementById('convertBtn').textContent = j2c ? 'Convert to CSV' : 'Convert to JSON';
+  document.getElementById('downloadBtn').textContent = j2c ? '⬇ Download CSV' : '⬇ Download JSON';
+  document.getElementById('optionsCard').style.display = j2c ? '' : 'none';
+  document.getElementById('input').placeholder = j2c
+    ? '[{"name":"Alice","age":30},{"name":"Bob","age":25}]'
+    : 'id,name,age\n1,Alice,30\n2,Bob,25';
+  clearAll();
+}
 
 function flattenObj(obj, prefix = '') {
   return Object.entries(obj).reduce((acc, [k, v]) => {
@@ -108,50 +135,88 @@ function escapeField(val, delim, quoteAll) {
   return str;
 }
 
+function parseCSVLine(line, delim) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (ch === delim && !inQ) {
+      result.push(cur); cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+
+function csvToJson(raw, delim) {
+  const lines = raw.split('\n').filter(l => l.trim());
+  if (lines.length < 2) return null;
+  const headers = parseCSVLine(lines[0], delim);
+  return lines.slice(1).map(line => {
+    const vals = parseCSVLine(line, delim);
+    const obj = {};
+    headers.forEach((h, i) => {
+      const v = vals[i] ?? '';
+      obj[h] = v === 'true' ? true : v === 'false' ? false : isNaN(v) || v === '' ? v : Number(v);
+    });
+    return obj;
+  });
+}
+
 function convert() {
   const raw = document.getElementById('input').value.trim();
   if (!raw) { showError('output', 'Input is empty.'); return; }
 
-  let data;
-  try { data = JSON.parse(raw); } catch(e) { showError('output', 'Invalid JSON: ' + e.message); return; }
-
-  if (!Array.isArray(data)) {
-    if (typeof data === 'object') data = [data];
-    else { showError('output', 'Input must be a JSON array or object.'); return; }
+  if (currentMode === 'json2csv') {
+    let data;
+    try { data = JSON.parse(raw); } catch(e) { showError('output', 'Invalid JSON: ' + e.message); return; }
+    if (!Array.isArray(data)) {
+      if (typeof data === 'object') data = [data];
+      else { showError('output', 'Input must be a JSON array or object.'); return; }
+    }
+    const flatten = document.getElementById('flattenNested').checked;
+    const delim = document.getElementById('delimiter').value;
+    const quoteAll = document.getElementById('quoteAll').checked;
+    const rows = flatten ? data.map(r => flattenObj(r)) : data;
+    const allKeys = [...new Set(rows.flatMap(r => Object.keys(r)))];
+    const header = allKeys.map(k => escapeField(k, delim, quoteAll)).join(delim);
+    const body = rows.map(r => allKeys.map(k => escapeField(r[k], delim, quoteAll)).join(delim)).join('\n');
+    showOutput('output', header + '\n' + body);
+  } else {
+    const delim = ',';
+    const data = csvToJson(raw, delim);
+    if (!data) { showError('output', 'CSV must have at least a header row and one data row.'); return; }
+    showOutput('output', JSON.stringify(data, null, 2));
   }
-
-  const flatten = document.getElementById('flattenNested').checked;
-  const delim = document.getElementById('delimiter').value;
-  const quoteAll = document.getElementById('quoteAll').checked;
-
-  const rows = flatten ? data.map(r => flattenObj(r)) : data;
-  const allKeys = [...new Set(rows.flatMap(r => Object.keys(r)))];
-
-  const header = allKeys.map(k => escapeField(k, delim, quoteAll)).join(delim);
-  const body = rows.map(r =>
-    allKeys.map(k => escapeField(r[k], delim, quoteAll)).join(delim)
-  ).join('\n');
-
-  showOutput('output', header + '\n' + body);
 }
 
-function downloadCSV() {
-  const content = document.getElementById('output').textContent;
-  if (!content || content === 'Your CSV will appear here...') { convert(); }
+function downloadOutput() {
+  convert();
   const text = document.getElementById('output').textContent;
-  const blob = new Blob([text], { type: 'text/csv' });
-  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'data.csv' });
+  const isCsv = currentMode === 'json2csv';
+  const blob = new Blob([text], { type: isCsv ? 'text/csv' : 'application/json' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: isCsv ? 'data.csv' : 'data.json'
+  });
   a.click();
 }
 
 function loadExample() {
-  document.getElementById('input').value = JSON.stringify(EXAMPLE, null, 2);
+  document.getElementById('input').value = currentMode === 'json2csv'
+    ? JSON.stringify(JSON_EXAMPLE, null, 2)
+    : CSV_EXAMPLE;
   convert();
 }
 
 function clearAll() {
   document.getElementById('input').value = '';
-  document.getElementById('output').textContent = 'Your CSV will appear here...';
+  document.getElementById('output').textContent = 'Your output will appear here...';
   document.getElementById('output').style.color = 'var(--text)';
 }
 
