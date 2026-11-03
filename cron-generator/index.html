@@ -3,14 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cron Expression Generator &amp; Explainer — Free Online Tool</title>
-  <meta name="description" content="Generate and explain cron expressions visually. See next 10 run times, build schedules with a UI builder, validate cron syntax. Free, no signup.">
-  <link rel="canonical" href="https://devtoolbox.dev/cron-generator/">
+  <title>Cron Expression Builder — Generate & Explain Cron | DevLab</title>
+  <meta name="description" content="Build cron expressions visually with dropdowns, see human-readable explanation, and preview next 10 run times. Free cron generator online.">
+  <link rel="canonical" href="https://nxtcraft.github.io/devlab/cron-generator/">
+  <meta property="og:title" content="Cron Expression Builder — DevLab">
+  <meta property="og:description" content="Build cron schedules visually. Human-readable explanation + next 10 run times.">
+  <meta property="og:url" content="https://nxtcraft.github.io/devlab/cron-generator/">
+  <meta property="og:type" content="website">
+  <meta name="robots" content="index, follow">
   <link rel="stylesheet" href="../css/main.css">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R9EW10BJGW"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-R9EW10BJGW');</script>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebApplication","name":"Cron Expression Builder","url":"https://nxtcraft.github.io/devlab/cron-generator/","applicationCategory":"DeveloperApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"INR"},"description":"Build and explain cron expressions visually. Preview next run times."}
+  </script>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a cron expression?","acceptedAnswer":{"@type":"Answer","text":"A cron expression is a string of 5 fields (minute hour day month weekday) that defines a schedule for automated tasks. Example: '0 9 * * 1-5' means every weekday at 9:00 AM."}},{"@type":"Question","name":"How do I run a cron job every 5 minutes?","acceptedAnswer":{"@type":"Answer","text":"Use the expression: */5 * * * * — the */5 in the minute field means 'every 5 minutes'."}},{"@type":"Question","name":"What does * mean in cron?","acceptedAnswer":{"@type":"Answer","text":"An asterisk (*) in any cron field means 'every possible value'. For example, * in the minute field means every minute."}}]}
+  </script>
 </head>
 <body>
 <nav>
-  <a class="nav-logo" href="../index.html">Dev<span>Toolbox</span></a>
+  <a class="nav-logo" href="../index.html">Dev<span>Lab</span></a>
   <ul class="nav-links">
     <li><a href="../json-formatter/">JSON</a></li>
     <li><a href="../sql-formatter/">SQL</a></li>
@@ -30,16 +43,97 @@
 
   <div class="tool-card">
     <h2>Cron Expression</h2>
-    <input type="text" id="cronInput" value="0 9 * * 1-5" placeholder="* * * * *" style="font-size:18px;letter-spacing:2px;font-weight:700" spellcheck="false">
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px;font-size:11px;color:var(--text-muted);text-align:center">
-      <span>Minute<br>0-59</span>
-      <span>Hour<br>0-23</span>
-      <span>Day of Month<br>1-31</span>
-      <span>Month<br>1-12</span>
-      <span>Day of Week<br>0-7 (Sun=0,7)</span>
+    <input type="text" id="cronInput" value="0 9 * * 1-5" placeholder="* * * * *" style="font-size:20px;letter-spacing:3px;font-weight:700;font-family:var(--font-mono)" spellcheck="false">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:6px;font-size:11px;color:var(--text-muted);text-align:center">
+      <span>Minute<br><span style="opacity:.6">0–59</span></span>
+      <span>Hour<br><span style="opacity:.6">0–23</span></span>
+      <span>Day of Month<br><span style="opacity:.6">1–31</span></span>
+      <span>Month<br><span style="opacity:.6">1–12</span></span>
+      <span>Day of Week<br><span style="opacity:.6">0–7 (Sun=0)</span></span>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" onclick="parseCron()">Explain &amp; Preview</button>
+    </div>
+  </div>
+
+  <div class="tool-card">
+    <h2>Visual Builder</h2>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Pick options below — the expression above updates instantly.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px">Minute</label>
+        <select id="vMin" onchange="buildFromUI()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);color:var(--text)">
+          <option value="*">Every minute (*)</option>
+          <option value="0">At :00</option>
+          <option value="15">At :15</option>
+          <option value="30">At :30</option>
+          <option value="45">At :45</option>
+          <option value="*/5">Every 5 min (*/5)</option>
+          <option value="*/10">Every 10 min (*/10)</option>
+          <option value="*/15">Every 15 min (*/15)</option>
+          <option value="*/30">Every 30 min (*/30)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px">Hour</label>
+        <select id="vHour" onchange="buildFromUI()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);color:var(--text)">
+          <option value="*">Every hour (*)</option>
+          <option value="0">Midnight (0)</option>
+          <option value="6">6 AM</option>
+          <option value="8">8 AM</option>
+          <option value="9" selected>9 AM</option>
+          <option value="12">Noon (12)</option>
+          <option value="17">5 PM</option>
+          <option value="18">6 PM</option>
+          <option value="20">8 PM</option>
+          <option value="23">11 PM</option>
+          <option value="*/2">Every 2 hours</option>
+          <option value="*/6">Every 6 hours</option>
+          <option value="*/12">Every 12 hours</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px">Day of Month</label>
+        <select id="vDom" onchange="buildFromUI()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);color:var(--text)">
+          <option value="*">Every day (*)</option>
+          <option value="1">1st</option>
+          <option value="15">15th</option>
+          <option value="28">28th</option>
+          <option value="L">Last day (L)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px">Month</label>
+        <select id="vMonth" onchange="buildFromUI()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);color:var(--text)">
+          <option value="*">Every month (*)</option>
+          <option value="1">January</option>
+          <option value="2">February</option>
+          <option value="3">March</option>
+          <option value="4">April</option>
+          <option value="6">June</option>
+          <option value="7">July</option>
+          <option value="9">September</option>
+          <option value="10">October</option>
+          <option value="12">December</option>
+          <option value="1,7">Jan &amp; Jul</option>
+          <option value="3,6,9,12">Quarterly</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px">Day of Week</label>
+        <select id="vDow" onchange="buildFromUI()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;background:var(--surface);color:var(--text)">
+          <option value="*">Any day (*)</option>
+          <option value="0">Sunday</option>
+          <option value="1">Monday</option>
+          <option value="2">Tuesday</option>
+          <option value="3">Wednesday</option>
+          <option value="4">Thursday</option>
+          <option value="5">Friday</option>
+          <option value="6">Saturday</option>
+          <option value="1-5" selected>Mon–Fri (weekdays)</option>
+          <option value="6,0">Sat &amp; Sun (weekends)</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -73,7 +167,7 @@
 </div>
 
 <footer>
-  <p><a href="../index.html">DevToolbox</a> · Cron Expression Generator · Free &amp; Private</p>
+  <p><a href="../index.html">DevLab</a> · Cron Expression Builder · Free &amp; Private</p>
 </footer>
 
 <script src="../js/utils.js"></script>
@@ -197,6 +291,16 @@ function matchField(val, expr, min, max) {
 function formatDate(d) {
   const opts = { weekday:'short', year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false };
   return d.toLocaleString('en-US', opts);
+}
+
+function buildFromUI() {
+  const min   = document.getElementById('vMin').value;
+  const hour  = document.getElementById('vHour').value;
+  const dom   = document.getElementById('vDom').value;
+  const month = document.getElementById('vMonth').value;
+  const dow   = document.getElementById('vDow').value;
+  document.getElementById('cronInput').value = `${min} ${hour} ${dom} ${month} ${dow}`;
+  parseCron();
 }
 
 // Auto-parse on input
