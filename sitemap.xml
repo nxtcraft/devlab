@@ -2,19 +2,19 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://nxtcraft.github.io/devlab/</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>
   <url><loc>https://nxtcraft.github.io/devlab/guide/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://devtoolbox.dev/json-to-csv/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://devtoolbox.dev/json-formatter/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://devtoolbox.dev/sql-formatter/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://devtoolbox.dev/cron-generator/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://devtoolbox.dev/jwt-decoder/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://devtoolbox.dev/epoch-converter/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://devtoolbox.dev/base64/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://devtoolbox.dev/regex-tester/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://devtoolbox.dev/url-encoder/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://devtoolbox.dev/html-entities/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://devtoolbox.dev/color-converter/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://devtoolbox.dev/hash-generator/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://devtoolbox.dev/diff-checker/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://devtoolbox.dev/markdown-preview/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://devtoolbox.dev/uuid-generator/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/json-to-csv/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/json-formatter/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/sql-formatter/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/cron-generator/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/jwt-decoder/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/epoch-converter/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/base64/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/regex-tester/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/url-encoder/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/html-entities/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/color-converter/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/hash-generator/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/diff-checker/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/markdown-preview/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://nxtcraft.github.io/devlab/uuid-generator/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
 </urlset>
