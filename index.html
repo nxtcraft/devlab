@@ -29,6 +29,7 @@
 <nav>
   <a class="nav-logo" href="index.html">Dev<span>Lab</span></a>
   <a href="guide/" style="font-size:12px;font-weight:600;color:rgba(255,255,255,.85);text-decoration:none;border:1.5px solid rgba(255,255,255,.3);padding:5px 11px;border-radius:7px">📖 Guide</a>
+  <button id="theme-btn" onclick="toggleTheme()" title="Toggle theme" style="margin-left:auto;background:none;border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:14px;color:var(--text-muted);transition:border-color .15s">🌙</button>
 </nav>
 
 <div class="container">
@@ -128,5 +129,19 @@
 <style>.related-tools{background:#1e1f2e;border-top:1px solid #2d3748;padding:1.25rem 1.5rem;margin-top:1rem}.related-tools h3{font-size:.8rem;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem}.related-tools-grid{display:flex;flex-wrap:wrap;gap:.5rem}.related-tools a{display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .8rem;border-radius:20px;border:1.5px solid #2d3748;color:#93c5fd;font-size:.82rem;font-weight:600;text-decoration:none;transition:all .15s}.related-tools a:hover{background:#3b82f6;color:#fff;border-color:#3b82f6}</style>
 <div class="related-tools"><h3>Related Tools</h3><div class="related-tools-grid"><a href="https://nxtcraft.github.io/wordkit/">📝 WordKit</a><a href="https://nxtcraft.github.io/passkit/">🔑 PassKit</a><a href="https://nxtcraft.github.io/unitconv/">🔄 Unit Converter</a><a href="https://nxtcraft.github.io/color-contrast/">🎨 Color Contrast</a></div></div>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/devlab/sw.js");</script>
+<script>
+function applyTheme(mode){
+  document.documentElement.setAttribute('data-theme', mode);
+  const btn=document.getElementById('theme-btn');
+  if(btn) btn.textContent = mode==='light'?'☀️':'🌙';
+}
+function toggleTheme(){
+  const cur=localStorage.getItem('dl_theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+  const next=cur==='dark'?'light':'dark';
+  localStorage.setItem('dl_theme',next);
+  applyTheme(next);
+}
+applyTheme(localStorage.getItem('dl_theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
+</script>
 </body>
 </html>
