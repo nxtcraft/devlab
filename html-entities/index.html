@@ -116,7 +116,7 @@ function decodeEntities() {
   const el = Object.assign(document.createElement('textarea'), { innerHTML: text });
   const decoded = el.value;
   showOutput('decOut', decoded);
-  document.getElementById('preview').innerHTML = text;
+  document.getElementById('preview').textContent = decoded;
 }
 
 function switchTab(btn, name) {

@@ -99,8 +99,8 @@ function updateClock() {
   const now = new Date();
   const s = Math.floor(now.getTime() / 1000);
   const ms = now.getTime();
-  document.getElementById('liveSec').textContent = s.toLocaleString();
-  document.getElementById('liveMs').textContent = ms.toLocaleString() + ' ms';
+  document.getElementById('liveSec').textContent = String(s);
+  document.getElementById('liveMs').textContent = ms + ' ms';
   document.getElementById('liveDate').textContent = now.toLocaleString();
   document.getElementById('liveUtc').textContent = now.toUTCString();
 }
@@ -127,8 +127,8 @@ function epochToDate() {
     row('Local time', d.toLocaleString()),
     row('UTC', d.toUTCString()),
     row('ISO 8601', d.toISOString()),
-    row('Unix (seconds)', Math.floor(ms/1000).toLocaleString()),
-    row('Unix (milliseconds)', ms.toLocaleString()),
+    row('Unix (seconds)', String(Math.floor(ms/1000))),
+    row('Unix (milliseconds)', String(ms)),
     row('Relative', timeAgo(d)),
   ];
 
@@ -144,8 +144,8 @@ function dateToEpoch() {
   const ms = d.getTime();
 
   const rows = [
-    row('Unix (seconds)', s.toLocaleString()),
-    row('Unix (milliseconds)', ms.toLocaleString()),
+    row('Unix (seconds)', String(s)),
+    row('Unix (milliseconds)', String(ms)),
     row('UTC', d.toUTCString()),
     row('ISO 8601', d.toISOString()),
   ];
